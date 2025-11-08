@@ -1,29 +1,26 @@
-import React, { useMemo } from 'react';
-import { CreditCard, Receipt, DollarSign } from 'lucide-react';
+import React from 'react';
+import { CreditCard, Receipt } from 'lucide-react';
+
+const API_BASE = import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' ? window.location.origin.replace(':3000', ':8000') : '');
 
 export default function Checkout({ inspection, onReset }) {
-  const lineItems = useMemo(() => {
-    if (!inspection) return [];
-    const items = [];
+  if (!inspection) return null;
+  const { invoice, invoice_id } = inspection;
 
-    const counts = { attention: 0, fail: 0 };
-    Object.values(inspection.checks).forEach((section) => {
-      Object.values(section).forEach((v) => {
-        if (v === 'attention') counts.attention += 1;
-        if (v === 'fail') counts.fail += 1;
+  const pay = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ invoice_id }),
       });
-    });
-
-    if (counts.attention) items.push({ name: 'Preventive maintenance items', qty: counts.attention, price: 25 });
-    if (counts.fail) items.push({ name: 'Critical repair items', qty: counts.fail, price: 60 });
-    items.push({ name: 'Base inspection fee', qty: 1, price: 49 });
-
-    return items;
-  }, [inspection]);
-
-  const subtotal = lineItems.reduce((sum, li) => sum + li.qty * li.price, 0);
-  const taxes = +(subtotal * 0.08).toFixed(2);
-  const total = +(subtotal + taxes).toFixed(2);
+      if (!res.ok) throw new Error('Payment failed');
+      await res.json();
+      alert('Payment successful');
+    } catch (e) {
+      alert('Payment failed');
+    }
+  };
 
   return (
     <div className="bg-white/70 backdrop-blur rounded-xl border border-slate-200 p-6 shadow-sm">
@@ -33,7 +30,7 @@ export default function Checkout({ inspection, onReset }) {
       </div>
 
       <div className="rounded-lg border border-slate-200 bg-white divide-y">
-        {lineItems.map((li, i) => (
+        {invoice.line_items.map((li, i) => (
           <div key={i} className="flex items-center justify-between p-4">
             <div>
               <p className="font-medium text-slate-800">{li.name}</p>
@@ -44,20 +41,20 @@ export default function Checkout({ inspection, onReset }) {
         ))}
         <div className="flex items-center justify-between p-4">
           <p className="text-slate-600">Subtotal</p>
-          <p className="font-medium text-slate-800">${subtotal.toFixed(2)}</p>
+          <p className="font-medium text-slate-800">${invoice.subtotal.toFixed(2)}</p>
         </div>
         <div className="flex items-center justify-between p-4">
           <p className="text-slate-600">Taxes (8%)</p>
-          <p className="font-medium text-slate-800">${taxes.toFixed(2)}</p>
+          <p className="font-medium text-slate-800">${invoice.taxes.toFixed(2)}</p>
         </div>
         <div className="flex items-center justify-between p-4">
           <p className="text-slate-700 font-medium">Total</p>
-          <p className="text-slate-900 font-semibold">${total.toFixed(2)}</p>
+          <p className="text-slate-900 font-semibold">${invoice.total.toFixed(2)}</p>
         </div>
       </div>
 
       <div className="mt-6 flex flex-col sm:flex-row gap-3">
-        <button className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors w-full sm:w-auto">
+        <button onClick={pay} className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-medium px-5 py-2 rounded-lg transition-colors w-full sm:w-auto">
           <CreditCard className="w-4 h-4" />
           Pay now
         </button>
@@ -66,7 +63,7 @@ export default function Checkout({ inspection, onReset }) {
         </button>
       </div>
 
-      <p className="text-xs text-slate-500 mt-3">Payment is simulated for this demo. No real transactions occur.</p>
+      <p className="text-xs text-slate-500 mt-3">Payment is simulated. Records are stored in the database.</p>
     </div>
   );
 }

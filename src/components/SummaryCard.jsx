@@ -20,18 +20,18 @@ export default function SummaryCard({ selected, inspection }) {
             <User className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wide">Customer</span>
           </div>
-          <p className="mt-2 font-medium">{customer.name}</p>
-          <p className="text-sm text-slate-300">{customer.phone}</p>
-          <p className="text-sm text-slate-300">{customer.email}</p>
+          <p className="mt-2 font-medium">{customer?.name}</p>
+          <p className="text-sm text-slate-300">{customer?.phone}</p>
+          <p className="text-sm text-slate-300">{customer?.email}</p>
         </div>
         <div className="bg-white/5 rounded-lg p-4">
           <div className="flex items-center gap-2 text-slate-200">
             <Car className="w-4 h-4" />
             <span className="text-sm uppercase tracking-wide">Vehicle</span>
           </div>
-          <p className="mt-2 font-medium">{vehicle.year} {vehicle.make} {vehicle.model}</p>
-          <p className="text-sm text-slate-300">VIN: {vehicle.vin}</p>
-          <p className="text-sm text-slate-300">Plate: {vehicle.plate} • {vehicle.color}</p>
+          <p className="mt-2 font-medium">{vehicle?.year} {vehicle?.make} {vehicle?.model}</p>
+          <p className="text-sm text-slate-300">VIN: {vehicle?.vin}</p>
+          <p className="text-sm text-slate-300">Plate: {vehicle?.plate} • {vehicle?.color}</p>
         </div>
       </div>
 
@@ -42,7 +42,7 @@ export default function SummaryCard({ selected, inspection }) {
             <span className="text-sm uppercase tracking-wide">Status</span>
           </div>
           <p className="mt-2 font-medium">Inspection saved</p>
-          <p className="text-sm text-slate-300">{new Date(inspection.createdAt).toLocaleString()}</p>
+          <p className="text-sm text-slate-300">{new Date(inspection.createdAt || Date.now()).toLocaleString()}</p>
         </div>
       )}
     </div>

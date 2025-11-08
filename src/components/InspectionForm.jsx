@@ -24,9 +24,13 @@ const sections = [
   },
 ];
 
+const API_BASE = import.meta.env.VITE_BACKEND_URL || (typeof window !== 'undefined' ? window.location.origin.replace(':3000', ':8000') : '');
+
 export default function InspectionForm({ selected, onComplete }) {
   const [notes, setNotes] = useState('');
   const [photos, setPhotos] = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   const [checks, setChecks] = useState(() => {
     const init = {};
     sections.forEach((s) => {
@@ -48,17 +52,29 @@ export default function InspectionForm({ selected, onComplete }) {
     }));
   };
 
-  const complete = () => {
-    const payload = {
-      customer: selected.customer,
-      vehicle: selected.vehicle,
-      checks,
-      notes,
-      photos: photos.map((p) => p.name),
-      status: 'inspection_complete',
-      createdAt: new Date().toISOString(),
-    };
-    onComplete(payload);
+  const complete = async () => {
+    setError('');
+    try {
+      setSaving(true);
+      const res = await fetch(`${API_BASE}/inspections`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_id: selected.customer._id,
+          vehicle_id: selected.vehicle._id,
+          checks,
+          notes,
+          photos: photos.map((p) => p.name),
+        }),
+      });
+      if (!res.ok) throw new Error('Save failed');
+      const data = await res.json();
+      onComplete({ ...data, createdAt: new Date().toISOString(), selected });
+    } catch (e) {
+      setError('Could not save inspection. Ensure backend/database is running.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -132,14 +148,15 @@ export default function InspectionForm({ selected, onComplete }) {
       <div className="mt-6 flex items-center gap-3">
         <button
           onClick={complete}
-          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-lg transition-colors"
+          disabled={saving}
+          className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white font-medium px-5 py-2 rounded-lg transition-colors"
         >
           <CheckCircle2 className="w-4 h-4" />
-          Save Inspection
+          {saving ? 'Saving...' : 'Save Inspection'}
         </button>
         <div className="flex items-center gap-2 text-amber-600">
           <AlertTriangle className="w-4 h-4" />
-          <span className="text-sm">This demo stores data locally during this session.</span>
+          <span className="text-sm">Photos are listed by name only in this demo.</span>
         </div>
       </div>
     </div>
